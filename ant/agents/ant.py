@@ -13,7 +13,7 @@ from numpy import array
 from pygame import Surface
 
 from ant.settings import ALPHA
-from ant.settings import ANT_COLOR
+from ant.settings import ANT_WITHOUT_NUTRIENT_COLOR, ANT_WITH_NUTRIENT_COLOR
 from ant.settings import BETA
 from ant.settings import GAMMA
 from ant.settings import GLOBAL_RNG
@@ -45,7 +45,6 @@ class BaseAnt(metaclass=ABCMeta):
         width, height = 0.2*rect.width, 0.2*rect.height
 
         self.surface = Surface((width, height))
-        self.surface.fill(ANT_COLOR)
         self.rect = background.get_rect(
             top=self._rng.uniform(rect.top, rect.bottom - height),
             left=self._rng.uniform(rect.left, rect.right - width),
@@ -81,6 +80,12 @@ class BaseAnt(metaclass=ABCMeta):
         return self._mandible > 0
 
     def draw(self):
+        if self.mandible_full():
+            self.surface.fill(ANT_WITH_NUTRIENT_COLOR)
+
+        else:
+            self.surface.fill(ANT_WITHOUT_NUTRIENT_COLOR)
+
         self._update_rect()
         self.background.blit(self.surface, self.rect)
 
@@ -222,7 +227,7 @@ class Ant:
         self.length = 0
 
     def draw(self):
-        square(self.surface, ANT_COLOR, self.rect)
+        square(self.surface, ANT_WITHOUT_NUTRIENT_COLOR, self.rect)
 
     def mandible_full(self):
         return self._mandible > 0

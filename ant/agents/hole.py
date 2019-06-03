@@ -36,10 +36,14 @@ class Hole:
 
         self.background = background
 
-        self.surface = Surface((width, height))
+        dwidth, dheight = .9*width, .9*height
+
+        self.surface = Surface((dwidth, dheight))
         self.rect = self.surface.get_rect(
-            height=height,
-            width=width
+            height=dheight,
+            width=dwidth,
+            centerx=width/2,
+            centery=height/2
         )
 
     @property
