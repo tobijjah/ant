@@ -94,7 +94,7 @@ class Controller:
         self.ants = [hole.spawn_ant() for i in range(1)]
 
         while True:
-            self.clock.tick(10)
+            self.clock.tick()
             self.event_loop()
 
             for ant in self.ants:
