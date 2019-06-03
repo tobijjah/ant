@@ -1,6 +1,6 @@
 """
-Module: controller.py
-****
+controller
+**********
 
 :Author: tobijjah
 :Date: 03.06.19

@@ -1,6 +1,6 @@
 """
-Module: cli
-****
+cli
+***
 
 :Author: tobijjah
 :Date: 03.06.19

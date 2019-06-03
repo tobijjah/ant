@@ -1,6 +1,6 @@
 """
-Module mixins
-****
+mixins
+******
 
 :Author: tobijjah
 :Date: 02.06.19

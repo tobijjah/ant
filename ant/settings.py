@@ -1,6 +1,6 @@
 """
-Module settings
-***************
+settings
+********
 
 :Author: tobijjah
 :Date: 07.05.2019

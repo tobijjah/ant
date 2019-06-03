@@ -1,6 +1,6 @@
 """
-Module pheromone
-****
+pheromone
+*********
 
 :Author: tobijjah
 :Date: 31.05.19
