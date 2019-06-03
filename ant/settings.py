@@ -24,6 +24,8 @@ ANT_COLOR = 115, 115, 115
 
 SELECTION_COLOR = 255, 0, 0
 
+OBSTACLE_COLOR = 0, 0, 0
+
 # algorithm parameter
 GAMMA = 0.001
 """:obj:`float`: Pheromone init value (GAMMA < 1)."""

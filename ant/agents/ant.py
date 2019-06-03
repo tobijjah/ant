@@ -93,6 +93,7 @@ class BaseAnt(metaclass=ABCMeta):
     def _allowed_cells(self, cells):
         # filter for obstacles
         self._allowed = list(set(cells) - set(self._visited))
+        self._allowed = list(filter(lambda cell: not cell.has_obstacle(), self._allowed))
 
     def _probabilities(self, target):
         probabilities = array([

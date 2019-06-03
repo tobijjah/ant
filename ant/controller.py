@@ -74,10 +74,7 @@ class Controller:
                 self.nutrients.append(cell)
 
             elif event.unicode == 'o':
-                # spawn obstacle
-                # requires new class obstacle (is lightweight)
-                # requires a obstacle filter in allowed cells in ant method
-                pass
+                self.selected_cell.spawn_obstacle()
 
         if self.selected_cell and self.selected_cell.has_hole():
             # later ant type
@@ -89,7 +86,7 @@ class Controller:
             if event.unicode == 'd':
                 del self.selected_cell.hole
                 del self.selected_cell.nutrient
-                # del self.selected_cell.obstacle
+                del self.selected_cell.obstacle
 
     def run(self):
         hole = self.nature.spawn_hole()

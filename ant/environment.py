@@ -13,6 +13,7 @@ from pygame.draw import rect as square
 
 from ant.agents.hole import Hole
 from ant.agents.nutrient import Nutrient
+from ant.agents.obstacle import Obstacle
 from ant.agents.pheromone import Pheromone
 from ant.errors import CellAgentError
 from ant.errors import CellOccupiedError
@@ -263,6 +264,7 @@ class Cell:
         self._hole = None
         self._nutrient = None
         self._pheromone = None
+        self._obstacle = None
 
     @property
     def hole(self):
@@ -289,6 +291,17 @@ class Cell:
         self._nutrient = None
 
     @property
+    def obstacle(self):
+        if self.has_obstacle():
+            return self._obstacle
+
+        raise CellAgentError('Cell has no obstacle agents')
+
+    @obstacle.deleter
+    def obstacle(self):
+        self._obstacle = None
+
+    @property
     def pheromone(self):
         """:obj:`Pheromone`: The Pheromone, raises CellAgentError if Cell has no Pheromone."""
         if self.has_pheromone():
@@ -312,7 +325,7 @@ class Cell:
         if self._selected:
             square(self.surface, SELECTION_COLOR, self.surface.get_rect(), 1)
 
-        for attr in ['pheromone', 'nutrient', 'hole']:
+        for attr in ['pheromone', 'nutrient', 'hole', 'obstacle']:
 
             try:
                 obj = self.__getattribute__(attr)
@@ -353,6 +366,13 @@ class Cell:
 
         raise CellOccupiedError("Cell has already a Nutrient or Hole")
 
+    def spawn_obstacle(self):
+        if not self.occupied():
+            self._obstacle = Obstacle(self.surface, self.rect.width, self.rect.height)
+            return self
+
+        raise CellOccupiedError("Cell has already a Nutrient or Hole")
+
     def spawn_pheromone(self):
         if not self.has_pheromone():
             self._pheromone = Pheromone(self.surface, self.rect.width, self.rect.height)
@@ -366,7 +386,6 @@ class Cell:
         Spawns an Ant and returns it. Ants can only be spawned on Cells with a hole.
 
         Args:
-            atype (:obj:`str`): The Ant class type to return (one of simple or complex)
             **kwargs: Please refer to Ant factory method or Ant base class for further details
 
         Returns:
@@ -397,6 +416,9 @@ class Cell:
         """
         return self._nutrient is not None
 
+    def has_obstacle(self):
+        return self._obstacle is not None
+
     def has_pheromone(self):
         """Does the Cell have a Pheromone?
 
@@ -413,7 +435,7 @@ class Cell:
         Returns:
             :obj:`bool`
         """
-        return self._hole or self._nutrient
+        return self._hole or self._nutrient or self._obstacle
 
     def __eq__(self, other):
         if isinstance(other, Cell):
