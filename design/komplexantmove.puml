@@ -1,0 +1,56 @@
+@startuml
+
+start
+
+:move;
+
+if (Mandible Full ) then ( False )
+
+  : search Nutrient ;
+
+  while (not Movement Cell   )
+
+    if (1..* Nutrient Cells  ) then ( True )
+
+        :pop Nutrient Cell ;
+
+        if (Nutrient Cell not empty) then (True)
+            :select as Movement Cell;
+
+        else ( False )
+        endif
+
+    elseif (Pheromone Cells >= upper) then (True)
+
+        :pop Pheromone Cell;
+        :select as Movement Cell;
+
+    elseif (lower <= Pheromone Cells < upper) then (True)
+
+        :pop Pheromone Cell;
+        :probabilty to select p=X;
+
+        if (Outcome 1) then (True)
+            :select as movement Cell;
+
+        else (False)
+        endif
+
+    else (False)
+
+        :select random Cell\nas movement Cell;
+
+    endif
+
+  endwhile
+
+else (True)
+  :search Hole;
+
+endif
+
+:move to Cell;
+
+stop
+
+@enduml

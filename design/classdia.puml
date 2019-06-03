@@ -1,0 +1,92 @@
+@startuml
+
+namespace ant.environment #00FF00 {
+
+    class Environment {
+        + Affine transform
+        + int neighbours
+        + bool torus
+        - int _rows
+        - int _cols
+        - Cell[_rows][_cols] _field
+        - Cell[_rows*_cols] _field_flat
+        - Random _rng
+        - Position[neighbours] _rules
+        + void draw()
+        + Cell spawn_hole(Position position)
+        + Cell spawn_nutrient(Position position, int amount)
+        + Cell[] visible(Ant ant)
+        + Cell get_cell(Position position)
+        + Cell get_torus_cell(Position position)
+        + bool on_field(Position position)
+    }
+
+    class Cell {
+        + Position pos
+        + Rect rect
+        + Surface surface
+        - Hole _hole
+        - Nutrient _nutrient
+        - Pheromone _pheromone
+        + void draw()
+        + Cell spawn_hole()
+        + Cell spawn_nutrient(int amount)
+        + Cell spawn_nutrient(str atype, **kwargs)
+        + bool has_hole()
+        + bool has_nutrient()
+        + bool has_pheromone()
+        + bool occupied()
+    }
+
+    class Position {
+        + int x
+        + int y
+    }
+}
+
+namespace ant.agent #FF0000 {
+
+    class Ant {
+
+    }
+
+    class Pheromone {
+        + float intensity
+        + Rect rect
+        + Surface surface
+        - int[3] _start_color
+        - int[3] _end_color
+        - float _steepness
+        - float _rel_tol
+        - float _x
+        + void draw()
+        + void increase(float amount)
+        + void decrease(float amount)
+        + bool intense()
+        - void _sigmoid()
+        - float _sigmoid_inverted()
+    }
+
+    class Hole {
+        + Rect rect
+        + Surface surface
+        + str draw()
+    }
+
+    class Nutrient {
+        + Rect rect
+        + Surface surface
+        - int _amount
+        + void draw()
+        + bool empty()
+    }
+
+}
+
+ant.environment.Environment "1" --> "*"  ant.environment.Cell : has >
+ant.environment.Cell "1" --> "1" ant.environment.Position : has >
+ant.environment.Cell "1" --> "1" ant.agent.Hole : has >
+ant.environment.Cell "1" --> "1" ant.agent.Nutrient : has >
+ant.environment.Cell "1" --> "1" ant.agent.Pheromone : has >
+
+@enduml
