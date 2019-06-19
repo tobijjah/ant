@@ -6,6 +6,7 @@ environment
 :Date: 07.05.2019
 """
 from logging import getLogger
+
 from math import floor
 from numpy import ravel
 from pygame import Rect
@@ -23,6 +24,9 @@ from ant.errors import EnvironmentOutOfBoundsError
 from ant.settings import CELL_COLOR
 from ant.settings import GLOBAL_RNG
 from ant.settings import SELECTION_COLOR
+
+
+# i want to log if anything is spawned on a cell, do we really need it
 
 
 class Environment:
@@ -105,7 +109,7 @@ class Environment:
             if not cell.occupied():
                 return cell.spawn_hole()
 
-        raise EnvironmentFullError('No space anymore to spawn a hole')
+        raise EnvironmentFullError('No space to spawn a hole')
 
     def spawn_nutrient(self, amount=100):
         """Spawns a Nutrient on field.
@@ -125,7 +129,7 @@ class Environment:
             if not cell.occupied():
                 return cell.spawn_nutrient(amount)
 
-        raise EnvironmentFullError('No space anymore to spawn a nutrient')
+        raise EnvironmentFullError('No space to spawn a nutrient')
 
     def spawn_obstacle(self):
         """Spawns an Obstacle on field.
@@ -142,8 +146,9 @@ class Environment:
             if not cell.occupied():
                 return cell.spawn_obstacle()
 
-        raise EnvironmentFullError('No space anymore to spawn an obstacle')
+        raise EnvironmentFullError('No space to spawn an obstacle')
 
+    # TODO rename
     def visible(self, ant):
         """Determine neighbour cells for an Ant.
 
@@ -156,10 +161,14 @@ class Environment:
             :obj:`list(Cell)`: A list of neighbouring cells.
         """
         if self.torus:
-            return [self.get_torus_cell(ant.pos + rule) for rule in self._rules]
+            neighbours = [self.get_torus_cell(ant.pos + rule) for rule in self._rules]
 
         else:
-            return [self.get_cell(ant.pos + rule) for rule in self._rules if self.on_field(ant.pos + rule)]
+            neighbours = [self.get_cell(ant.pos + rule) for rule in self._rules if self.on_field(ant.pos + rule)]
+
+        self._logger.debug('%s %s', ant, list(map(str, neighbours)))
+
+        return neighbours
 
     def get_cell(self, position):
         """Returns Cell at the position on field.
@@ -190,7 +199,7 @@ class Environment:
         x, y = event.pos * self._inverse_transform
         pos = Position(floor(x), floor(y))
 
-        self._logger.debug('Got display pos %s which is field pos %s' % (event.pos, pos))
+        self._logger.debug('Display POS%s is field POS%s', event.pos, pos)
 
         return self.get_cell(pos)
 
@@ -244,8 +253,8 @@ class Cell:
     """Cell is a component of the Environment field.
 
     This class holds references to the static classes/agents (Hole, Nutrient, Obstacles and Pheromone) of the model.
-    Further this class provides an interface to spawn the following classes: Hole, Nutrient, and Ant.
-    A Cell can have only a Hole or Nutrient both classes can not exists in parallel on a Cell.
+    Further this class provides an interface to spawn the following classes: Hole, Nutrient, Obstacle, and Ant.
+    A Cell can have only a Hole or Nutrient or Obstacle classes can not exists in parallel on a Cell.
 
     Args:
         position (:obj:`Position`): Cell position on Environment field.
@@ -259,7 +268,6 @@ class Cell:
     """
     def __init__(self, position, background, rect):
         self.pos = position
-        self._selected = False
         self.background = background
 
         self.surface = Surface((rect.width, rect.height))
@@ -271,6 +279,7 @@ class Cell:
         )
 
         self._hole = None
+        self._selected = False  # true if the cell is selected on display
         self._nutrient = None
         self._pheromone = None
         self._obstacle = None
@@ -301,6 +310,7 @@ class Cell:
 
     @property
     def obstacle(self):
+        """:obj:`Nutrient`: The Obstacle, raises CellAgentError if Cell has no Nutrient."""
         if self.has_obstacle():
             return self._obstacle
 
@@ -323,17 +333,21 @@ class Cell:
         self._pheromone = None
 
     def set_selected(self):
+        """Flip selection state"""
         self._selected = not self._selected
 
     def draw(self):
         """Draw Cell on surface."""
         # uncomment for disco mode
         # self.surface.fill([GLOBAL_RNG.randint(0,255,1), GLOBAL_RNG.randint(0,255,1), GLOBAL_RNG.randint(0,255,1)])
+
         self.surface.fill(CELL_COLOR)  # clear cell content for new draw
 
         if self._selected:
             square(self.surface, SELECTION_COLOR, self.surface.get_rect(), 1)
 
+        # order matters pheromones can exist on all cells, drawing them first ensures that they dont cover the other
+        # agents
         for attr in ['pheromone', 'nutrient', 'hole', 'obstacle']:
 
             try:
@@ -343,7 +357,7 @@ class Cell:
             except CellAgentError:
                 continue
 
-        self.background.blit(self.surface, self.rect)  # finally blit to background
+        self.background.blit(self.surface, self.rect)
 
     def spawn_hole(self):
         """Spawns a Hole on the Cell.
@@ -358,7 +372,7 @@ class Cell:
             self._hole = Hole(self.surface, self.rect.width, self.rect.height)
             return self
 
-        raise CellOccupiedError("Cell has already a Nutrient or Hole")
+        raise CellOccupiedError("Cell has already a Nutrient or Hole or Obstacle")
 
     def spawn_nutrient(self, amount):
         """Spawns a Nutrient on the Cell.
@@ -373,16 +387,32 @@ class Cell:
             self._nutrient = Nutrient(amount, self.surface, self.rect.width, self.rect.height)
             return self
 
-        raise CellOccupiedError("Cell has already a Nutrient or Hole")
+        raise CellOccupiedError("Cell has already a Nutrient or Hole or Obstacle")
 
     def spawn_obstacle(self):
+        """Spawns an Obstacle on the Cell.
+
+        Returns:
+            :obj:`Cell`: The Cell with a reference to the spawned Obstacle.
+
+        Raises:
+            CellOccupiedError: If the Cell is already occupied by a Hole or Nutrient or Obstacle.
+        """
         if not self.occupied():
             self._obstacle = Obstacle(self.surface, self.rect.width, self.rect.height)
             return self
 
-        raise CellOccupiedError("Cell has already a Nutrient or Hole")
+        raise CellOccupiedError("Cell has already a Nutrient or Hole or Obstacle")
 
     def spawn_pheromone(self):
+        """Spawns a Pheromone on the Cell.
+
+        Returns:
+            :obj:`Pheromone`: The spawned Pheromone.
+
+        Raises:
+            CellOccupiedError: If the Cell is already occupied by a Hole or Nutrient or Obstacle.
+        """
         if not self.has_pheromone():
             self._pheromone = Pheromone(self.surface, self.rect.width, self.rect.height)
             return self.pheromone
@@ -426,6 +456,11 @@ class Cell:
         return self._nutrient is not None
 
     def has_obstacle(self):
+        """Does the Cell have an Obstacle?
+
+        Returns:
+            :obj:`bool`
+        """
         return self._obstacle is not None
 
     def has_pheromone(self):
@@ -456,7 +491,8 @@ class Cell:
         return hash((__class__.__name__, hash(self.pos)))
 
     def __str__(self):
-        return ''
+        return '{} POS{} -> {}/ {}/ {}/ {}'.format(__class__.__name__, self.pos, self._pheromone, self._hole,
+                                                   self._nutrient, self._obstacle)
 
     def __repr__(self):
         return '<{}(position={}, rect={}, surface={}) at {}>'.format(
