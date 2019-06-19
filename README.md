@@ -17,3 +17,13 @@ Agent based modelling on example of ant colony optimization.
 - Train UML class diagrams
 - Train testing with > 90% coverage (mocking and other fancy shit)
 - Train python typing module
+
+## ToDo
+-[ ] setup.py
+-[ ] sphinx cfg
+-[ ] makefile
+-[ ] environment
+    -[ ] doc Cell and Position
+    -[ ] logging Environment, Cell, and Position
+    -[ ] tests Environment, Cell, and Position
+-[ ] agents
