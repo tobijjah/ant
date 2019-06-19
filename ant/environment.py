@@ -5,6 +5,7 @@ environment
 :Author: tobijjah
 :Date: 07.05.2019
 """
+from logging import getLogger
 from math import floor
 from numpy import ravel
 from pygame import Rect
@@ -24,15 +25,12 @@ from ant.settings import GLOBAL_RNG
 from ant.settings import SELECTION_COLOR
 
 
-# TODO add logging, add __str__, update doc, update tests
-
-
 class Environment:
     """Class is the environment where the other classes/agents (Pheromone, Hole and Nutrient) lives.
 
     Basically it is a 2D list where each list element is a Cell object which holds
-    a reference to other classes/agents. This class can be used to spawn Holes and Nutrients.
-    Further it provides an interface to get the visible Cells for an Ant.
+    a reference to other classes/agents. This class can be used to spawn Holes, Nutrients, and Obstacles
+    at a random position. Further it provides an interface to get the visible Cells for an Ant.
     To instantiate the class two arguments are required while three additional arguments are optional.
 
     Args:
@@ -48,14 +46,14 @@ class Environment:
             If true the Ant perceives the opposite of the field.
 
     Attributes:
-        transform (:obj:`int`): Affine transformation matrix.
         neighbours (:obj:`int`): The total number of neighbours of a Cell.
         torus (:obj:`bool`): Environment is torus.
     """
     def __init__(self, transform, background, size=(10, 10), neighbours=4, torus=False):
         self.torus = torus
-        self.transform = transform  # use this matrix (~transform) for transform of display coords to field coords
-        self.inverse_transform = ~self.transform
+        # affine transform matrices to transform from display coords to field coords
+        self._transform = transform
+        self._inverse_transform = ~self._transform
 
         self._rows, self._cols = size
         self._rng = GLOBAL_RNG
@@ -63,7 +61,7 @@ class Environment:
         # init field with cell objects
         self._field = [
             [
-                Cell(Position(x, y), background, Rect(*((x, y)*self.transform), self.transform.a, self.transform.e))
+                Cell(Position(x, y), background, Rect(*((x, y)*self._transform), self._transform.a, self._transform.e))
                 for x in range(self._cols)
             ]
             for y in range(self._rows)
@@ -81,6 +79,8 @@ class Environment:
             self._rules = (Position(-1, 0), Position(-1, 1), Position(0, 1), Position(1, 1),
                            Position(1, 0), Position(1, -1), Position(0, -1), Position(-1, -1))
 
+        self._logger = getLogger('%s' % (__class__.__name__,))
+
     def draw(self):
         """Draw Environment on surface.
 
@@ -90,15 +90,10 @@ class Environment:
             for cell in row:
                 cell.draw()
 
-    def spawn_hole(self, position=None):
+    def spawn_hole(self):
         """Spawns a Hole on field.
 
-        Spawns a Hole at a random position. If position is provided the Hole is spawned
-        at this position.
-
-        Args:
-            position (:obj:`Position`, optional): If set the position where to spawn the Hole.
-                If not set the Hole is spawned at a random position.
+        Spawns a Hole at a random position.
 
         Returns:
             :obj:`Cell`: A Cell with a Hole.
@@ -106,26 +101,18 @@ class Environment:
         Raises:
             EnvironmentFullError: If all Cells are occupied by a Hole or Nutrient.
         """
-        if position:
-            cell = self.get_cell(position)
-            return cell.spawn_hole()
-
-        else:
-            for cell in self._field_flat:
-                if not cell.occupied():
-                    return cell.spawn_hole()
+        for cell in self._field_flat:
+            if not cell.occupied():
+                return cell.spawn_hole()
 
         raise EnvironmentFullError('No space anymore to spawn a hole')
 
-    def spawn_nutrient(self, position=None, amount=100):
+    def spawn_nutrient(self, amount=100):
         """Spawns a Nutrient on field.
 
-        Spawns a Nutrient at a random position. If position is provided the Nutrient is spawned
-        at this position.
+        Spawns a Nutrient at a random position.
 
         Args:
-            position (:obj:`Position`, optional): If set the position where to spawn the Nutrient.
-                If not set the Nutrient is spawned at a random position.
             amount (:obj:`int`, optional): The amount of nutrients to spawn.
 
         Returns:
@@ -134,16 +121,28 @@ class Environment:
         Raises:
             EnvironmentFullError: If all Cells are occupied by a Hole or Nutrient.
         """
-        if position:
-            cell = self.get_cell(position)
-            return cell.spawn_nutrient(amount)
+        for cell in self._field_flat:
+            if not cell.occupied():
+                return cell.spawn_nutrient(amount)
 
-        else:
-            for cell in self._field_flat:
-                if not cell.occupied():
-                    return cell.spawn_nutrient(amount)
+        raise EnvironmentFullError('No space anymore to spawn a nutrient')
 
-        raise EnvironmentFullError('No space anymore to spawn a hole')
+    def spawn_obstacle(self):
+        """Spawns an Obstacle on field.
+
+        Spawns an Obstacle at a random position.
+
+        Returns:
+            :obj:`Cell`: A Cell with a Nutrient.
+
+        Raises:
+            EnvironmentFullError: If all Cells are occupied by a Hole or Nutrient.
+        """
+        for cell in self._field_flat:
+            if not cell.occupied():
+                return cell.spawn_obstacle()
+
+        raise EnvironmentFullError('No space anymore to spawn an obstacle')
 
     def visible(self, ant):
         """Determine neighbour cells for an Ant.
@@ -154,7 +153,7 @@ class Environment:
             ant (:obj:`Ant`): An Ant object derived from BaseAnt.
 
         Returns:
-            :obj:`list(Cell)`: A list of neighbour cells for the Ant.
+            :obj:`list(Cell)`: A list of neighbouring cells.
         """
         if self.torus:
             return [self.get_torus_cell(ant.pos + rule) for rule in self._rules]
@@ -180,8 +179,18 @@ class Environment:
         raise EnvironmentOutOfBoundsError('Position {} out of bounds'.format(position))
 
     def get_display_cell(self, event):
-        x, y = event.pos * self.inverse_transform
+        """Returns Cell at the display position.
+
+        Args:
+            event (:obj:`Event`): An event which provides a pos attribute.
+
+        Returns:
+            :obj:`Cell`: Cell at the position.
+        """
+        x, y = event.pos * self._inverse_transform
         pos = Position(floor(x), floor(y))
+
+        self._logger.debug('Got display pos %s which is field pos %s' % (event.pos, pos))
 
         return self.get_cell(pos)
 
@@ -207,7 +216,7 @@ class Environment:
         """Determines if position is on field.
 
         Args:
-            position (:obj:`Position`): The requested position
+            position (:obj:`Position`): The requested position.
 
         Returns:
             :obj:`bool`
@@ -215,9 +224,9 @@ class Environment:
         return 0 <= position.x < self._cols and 0 <= position.y < self._rows
 
     def __repr__(self):
-        msg = '<{}(transform={}, surface={}, size=({},{}), visible={}, infinite={}) at {}>'.format(
-            __class__.__name__, self._rows, self.transform, self._field[0][0].surface,
-            self._cols, len(self._rules), self.torus, hex(id(self))
+        msg = '<{}(transform={}, size=({},{}), neighbours={}, torus={}) at {}>'.format(
+            __class__.__name__, self._rows, self._transform,
+            self._cols, self.neighbours, self.torus, hex(id(self))
         )
         return msg
 
@@ -234,14 +243,14 @@ class Environment:
 class Cell:
     """Cell is a component of the Environment field.
 
-    This class holds references to the static classes/agents (Hole, Nutrient, and Pheromone) of the model.
+    This class holds references to the static classes/agents (Hole, Nutrient, Obstacles and Pheromone) of the model.
     Further this class provides an interface to spawn the following classes: Hole, Nutrient, and Ant.
     A Cell can have only a Hole or Nutrient both classes can not exists in parallel on a Cell.
 
     Args:
         position (:obj:`Position`): Cell position on Environment field.
+        background (:obj:`Surface`): The surface to draw the Cell on.
         rect (:obj:`Rect`): The position of the cell on the display.
-        surface (:obj:`Surface`): The surface to draw the Cell on.
 
     Attributes:
         pos (:obj:`Position`): Cell position on Environment field.
@@ -458,7 +467,7 @@ class Cell:
 class Position:
     """Convenience class for storing Environment field coordinates.
 
-    Provides an interface to add and compare positions by pythons dunder methods.
+    Provides an interface to add and compare positions by python dunder methods.
     Positions are hashable therefore operations like position in positions are possible.
 
     Args:
@@ -489,7 +498,7 @@ class Position:
         return False
 
     def __str__(self):
-        return '{}({}, {})'.format(__class__.__name__, self.x, self.y)
+        return '({}, {})'.format(self.x, self.y)
 
     def __repr__(self):
         return '<{}(x={}, y={}) at {}>'.format(__class__.__name__, self.x, self.y, hex(id(self)))
