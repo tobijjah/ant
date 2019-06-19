@@ -72,7 +72,7 @@ class Hole:
         return hash((__class__.__name__, self._name))
 
     def __str__(self):
-        return '{} with {} Ants and {} Nutrients'.format(__class__.__name__, len(self.ants), self._nutrients)
+        return '{} {}a {}u'.format(__class__.__name__, len(self.ants), self._nutrients)
 
     def __repr__(self):
         return '<{}(name={}) at {}>'.format(__class__.__name__, self._name, hex(id(self)))

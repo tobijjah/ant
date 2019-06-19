@@ -72,7 +72,7 @@ class Nutrient(AlphaGradient):
         return self._amount == 0
 
     def __str__(self):
-        return '{} with {} units'.format(__class__.__name__, self._amount)
+        return '{} {}u'.format(__class__.__name__, self._amount)
 
     def __repr__(self):
         return '<{}(amount={}) at {}>'.format(__class__.__name__, self._amount, hex(id(self)))

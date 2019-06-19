@@ -120,9 +120,8 @@ class BaseAnt(metaclass=ABCMeta):
         return hash((self.__class__.__name__, self._name))
 
     def __str__(self):
-        return '{} {} at position {} with {} unit nutrient'.format(self.__class__.__name__,
-                                                                   self._name, str(self.pos),
-                                                                   self._mandible)
+        return '{}{} POS{} -> NUTRIENT {}u'.format(self.__class__.__name__, self._name,
+                                                   str(self.pos), self._mandible)
 
     def __repr__(self):
         msg = '<{}(pos={}, gamma={}, alpha={}, beta={}, q={}) at {}>'.format(

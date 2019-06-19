@@ -27,3 +27,6 @@ class Obstacle:
     def draw(self):
         self.surface.fill(OBSTACLE_COLOR)
         self.background.blit(self.surface, self.rect)
+
+    def __str__(self):
+        return __class__.__name__

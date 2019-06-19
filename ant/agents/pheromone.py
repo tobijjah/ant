@@ -89,7 +89,7 @@ class Pheromone(AlphaGradient):
         self.intensity = (1-RHO) * self.intensity
 
     def __str__(self):
-        return '{} with {} intensity'.format(__class__.__name__, self.intensity)
+        return '{} {}i'.format(__class__.__name__, self.intensity)
 
     def __repr__(self):
         return '<{}(gamma={}, q={}, rho={}) at {}>'.format(
