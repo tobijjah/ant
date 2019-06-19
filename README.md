@@ -19,11 +19,11 @@ Agent based modelling on example of ant colony optimization.
 - Train python typing module
 
 ## ToDo
--[ ] setup.py
--[ ] sphinx cfg
--[ ] makefile
+-[x] setup.py
+-[x] sphinx cfg
+-[x] makefile
 -[ ] environment
-    -[ ] doc Cell and Position
+    -[x] doc Cell and Position
     -[ ] logging Environment, Cell, and Position
     -[ ] tests Environment, Cell, and Position
 -[ ] agents
