@@ -6,6 +6,7 @@ cli
 :Date: 03.06.19
 """
 import click
+import logging
 
 from ant.controller import Controller
 
@@ -26,6 +27,14 @@ from ant.controller import Controller
 @click.option('-at', '--ant_type', 'ant_type', default='simple', type=str,
               help='The ant type, please select simple or smart.')
 def main(screen_size, field_size, neighbours, torus, nutrients, ant_type):
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    fmt = logging.Formatter('%(asctime)s %(module)s.%(name)s.%(funcName)s: %(message)s')
+    handler.setFormatter(fmt)
+    logger.addHandler(handler)
+
     controller = Controller(screen_size, field_size, neighbours, torus, nutrients, ant_type)
     controller.run()
 
